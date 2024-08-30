@@ -1,6 +1,6 @@
 "use client"
 import { signIn, useSession } from "next-auth/react"
-import { SeconndaryButton } from "./Button"
+import { SecondaryButton } from "./Button"
 
 export const Hero = () => {
     const session = useSession()
@@ -13,7 +13,7 @@ export const Hero = () => {
             <span className="text-3xl text-slate-400 flex justify-center  ">We are here to help you</span>
         </div>
         <div className="flex justify-center py-2">
-            {!session.data?.user && <SeconndaryButton onClick={() => { signIn }} prefix=" "> Sign In With Google</SeconndaryButton>}
+            {session.data?.user && <SecondaryButton onClick={() => { signIn }} prefix=" "> Sign In With Google</SecondaryButton>}
         </div>
     </div>
 }
