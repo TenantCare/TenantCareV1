@@ -12,7 +12,7 @@ export const PrimaryButton = ({ children, onClick }: {
 }
 
 
-export const SeconndaryButton = ({ children, onClick, prefix }: {
+export const SecondaryButton = ({ children, onClick, prefix }: {
     children: React.ReactNode,
     onClick: () => void,
     prefix?: React.ReactNode
