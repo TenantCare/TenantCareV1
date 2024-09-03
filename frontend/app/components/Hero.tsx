@@ -13,7 +13,17 @@ export const Hero = () => {
             <span className="text-3xl text-slate-400 flex justify-center  ">We are here to help you</span>
         </div>
         <div className="flex justify-center py-2">
-            {session.data?.user && <SecondaryButton onClick={() => { signIn }} prefix=" "> Sign In With Google</SecondaryButton>}
+            {!session.data?.user && (
+                <SecondaryButton
+                    onClick={() => {
+                        console.log("Sign In button clicked");
+                        signIn();
+                    }}
+                    prefix=" "
+                >
+                    Sign In With Google
+                </SecondaryButton>
+            )}
         </div>
     </div>
 }
