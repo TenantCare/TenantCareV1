@@ -1,9 +1,12 @@
 "use client"
 import { signIn, useSession } from "next-auth/react"
 import { SecondaryButton } from "./Button"
+import Register from "../auth/register/page"
+import { useRouter } from "next/navigation"
 
 export const Hero = () => {
     const session = useSession()
+    const router = useRouter()
     return <div>
         <div className="text-6xl font-medium">
             <span className="text-3xl">We care for you @</span>
@@ -14,15 +17,16 @@ export const Hero = () => {
         </div>
         <div className="flex justify-center py-2">
             {!session.data?.user && (
-                <SecondaryButton
+                <button
+                    className="px-2 py-1 bg-black text-white rounded-md"
                     onClick={() => {
-                        console.log("Sign In button clicked");
-                        signIn();
+                        console.log("Sign up button clicked");
+                        router.push("/auth/register");
                     }}
                     prefix=" "
                 >
-                    Sign In With Google
-                </SecondaryButton>
+                    Sign Up
+                </button>
             )}
         </div>
     </div>
