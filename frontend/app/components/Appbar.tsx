@@ -1,6 +1,6 @@
 "use client";
 import { signIn, signOut, useSession } from "next-auth/react";
-import { PrimaryButton } from "./Button";
+import { PrimaryButton, SecondaryButton } from "./Button";
 
 export const Appbar = () => {
     const { data: session } = useSession();
@@ -18,12 +18,12 @@ export const Appbar = () => {
                         Sign Out
                     </button>
                 ) : (
-                    <button
+                    <SecondaryButton
                         onClick={() => signIn()}
-                        className="px-2 py-1 bg-black text-white rounded-md"
+
                     >
                         Sign In
-                    </button>
+                    </SecondaryButton>
                 )}
             </div>
         </div>
