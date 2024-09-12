@@ -12,6 +12,7 @@ export default function LoginPage() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
         const result = await signIn('credentials', {
             redirect: false,
             email,
@@ -21,7 +22,22 @@ export default function LoginPage() {
         if (result?.error) {
             setError(result.error);
         } else {
-            router.push('/');
+            try {
+                const res = await fetch('/api/auth');
+                const session = await res.json();
+                console.log("User's role is", session?.user?.role);
+
+                if (session?.user?.role === 'ADMIN') {
+                    router.push('/admin/dashboard');
+                } else if (session?.user?.role === 'TENANT') {
+                    router.push('/tenant/dashboard');
+                } else {
+                    setError('Unknown user role');
+                }
+            } catch (err) {
+                console.error("Error fetching session:", err);
+                setError('Failed to fetch user role');
+            }
         }
     };
 
@@ -58,11 +74,11 @@ export default function LoginPage() {
                 </div>
                 <button
                     type="submit"
-                    className="bg-green-500 hover:bg-blue-700  rounded focus:outline-none focus:shadow-outline  text-white font-bold cursor-pointer px-6 py-2"
+                    className="bg-green-500 hover:bg-blue-700 rounded focus:outline-none focus:shadow-outline text-white font-bold cursor-pointer px-6 py-2"
                 >
-                    Login
+                    Login Here
                 </button>
             </form>
-        </div >
+        </div>
     );
 }
