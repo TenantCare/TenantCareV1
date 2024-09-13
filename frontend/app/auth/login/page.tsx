@@ -23,13 +23,17 @@ export default function LoginPage() {
             setError(result.error);
         } else {
             try {
-                const res = await fetch('/api/auth');
+                const res = await fetch('/api/auth/session');
                 const session = await res.json();
                 console.log("User's role is", session?.user?.role);
 
                 if (session?.user?.role === 'ADMIN') {
+                    console.log("User's role is", session?.user?.role);
+                    console.log("going to admin dashboard");
                     router.push('/admin/dashboard');
                 } else if (session?.user?.role === 'TENANT') {
+                    console.log("User's role is", session?.user?.role);
+                    console.log("going to tenant dashboard");
                     router.push('/tenant/dashboard');
                 } else {
                     setError('Unknown user role');
