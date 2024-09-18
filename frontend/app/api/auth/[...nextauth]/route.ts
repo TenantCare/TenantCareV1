@@ -37,7 +37,7 @@ const handler = NextAuth({
 	callbacks: {
 		async session({ session, token }) {
 			const user = await prisma.user.findUnique({
-				where: { email: session.user.email },
+				where: { email: session.user?.email ?? "" },
 			});
 
 			if (user) {
@@ -55,6 +55,7 @@ const handler = NextAuth({
 			return token;
 		},
 	},
+
 	secret: process.env.NEXTAUTH_SECRET,
 });
 
