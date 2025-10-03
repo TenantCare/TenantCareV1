@@ -12,14 +12,14 @@ export const Appbar = () => {
             <div>
                 {session ? (
                     <button
-                        onClick={() => signOut({ callbackUrl: '/' })}
+                        onClick={() => signOut({ callbackUrl: "/", redirect: true })}
                         className="px-2 py-1 bg-black text-white rounded-md"
                     >
                         Sign Out
                     </button>
                 ) : (
                     <button
-                        onClick={() => signIn()}
+                        onClick={() => signIn(undefined,{callbackUrl: "/dashboard"})}
                         className="px-2 py-1 bg-black text-white rounded-md"
                     >
                         Sign In
