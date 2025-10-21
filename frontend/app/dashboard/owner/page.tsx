@@ -14,44 +14,49 @@ export default function OwnerDashboardPage({ owner }: { owner: any }) {
         const [buildingName, setBuildingName] = useState("");
         const [apartmentLabel, setApartmentLabel] = useState("");
         const [creating, setCreating] = useState(false);
-const createApartment = async () => {
-  if (!buildingName || !apartmentLabel) {
-    alert("Please provide both fields");
-    return;
-  }
+        const [apartments, setApartments] = useState([]);
 
-  setCreating(true);
-  try {
-    const res = await fetch("/api/apartments", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ buildingName, apartmentLabel }),
-    });
-    const data = await res.json();
+      const createApartment = async () => {
+        if (!buildingName || !apartmentLabel) {
+          alert("Please provide both fields");
+          return;
+        }
 
-    if (data.success) {
-      alert("Apartment added successfully!");
-      setBuildingName(data.buildingName);
-      setApartmentLabel(data.apartmentLabel);
-      // Re-fetch apartment list
-      fetchApartments();
-    } else {
-      alert(data.error || "Error adding apartment");
-    }
-  } finally {
-    setCreating(false);
-  }
-};
+        setCreating(true);
+        try {
+          const res = await fetch("/api/apartments", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ buildingName, apartmentLabel }),
+          });
+          const data = await res.json();
 
-  const fetchApartments = async () => {
-    try {
-      const res = await fetch("/api/apartments");
-      const data = await res.json();
-      setApartmentLabel(data.apartments || []);
-    } catch (error) {
-      console.error("Failed to fetch apartments", error);
-    }
-  };
+          if (data.success) {
+            alert("Apartment added successfully!");
+            setBuildingName(data.buildingName);
+            setApartmentLabel(data.apartmentLabel);
+            // Re-fetch apartment list
+            // fetchApartments();
+          } else {
+            alert(data.error || "Error adding apartment");
+          }
+        } finally {
+          setCreating(false);
+        }
+      };
+
+        useEffect(() => {
+          const fetchApartments = async () => {
+            try {
+              const res = await fetch("/api/apartments");
+              const data = await res.json();
+              setApartments(data.apartments || []);
+            } catch (error) {
+              console.error("Failed to fetch apartments", error);
+            }
+          };
+          fetchApartments();
+        }, []);
         useEffect(() => {
         const fetchInvites = async () => {
             const res = await fetch("/api/invite");
@@ -101,45 +106,23 @@ const createApartment = async () => {
         )}
       </div>
 
-      {owner?.buildings?.length ? (
-        owner.buildings.map((building: any) => (
-          <div key={building.id} className="p-4 border rounded-lg mb-4">
-            <h2 className="text-xl font-semibold">{building.name}</h2>
-
-            {building.apartments.map((apt: any) => (
-              <div key={apt.id} className="ml-4 mt-2">
-                <h3 className="text-lg font-medium">Apartment #{apt.id}</h3>
-                <table className="ml-4 mt-1 border-collapse border">
-                  <thead>
-                    <tr>
-                      <th className="border p-2">Tenant Name</th>
-                      <th className="border p-2">Email</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {apt.tenants.length > 0 ? (
-                      apt.tenants.map((t: any) => (
-                        <tr key={t.id}>
-                          <td className="border p-2">{t.user.name}</td>
-                          <td className="border p-2">{t.user.email}</td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td className="border p-2" colSpan={2}>
-                          No tenants yet
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
+      {apartments.length === 0 ? (
+        <p className="text-yellow-600 mb-4">You have no apartments listed. Please add an apartment to get started.</p>
+      )
+      : (
+        <div className="mb-6">
+          <h2 className="text-lg font-semibold mb-2">Your Apartments</h2>
+          <ul className="list-disc list-inside">
+            {apartments.map((apt: any) => (
+              <li key={apt.id}>
+                {apt.building?.name ?? "Unknown"} – {apt.label}
+              </li>
             ))}
-          </div>
-        ))
-      ) : (
-        <p>No buildings found.</p>
-      )}
+          </ul>
+        </div>
+      )
+    }
+      
       <div className="mb-8">
         <h2 className="text-lg font-semibold mb-2">Add Apartment</h2>
         <input
