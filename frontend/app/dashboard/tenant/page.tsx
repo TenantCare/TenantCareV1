@@ -6,7 +6,7 @@ export default function TenantDashboardPage() {
 
     return (
         <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold mb-4">Welcome, Owner!</h2>
+            <h2 className="text-xl font-semibold mb-4">Welcome, Tenant!</h2>
             {session?.user ? (
                 <div>
                     <p><strong>Name:</strong> {session.user.name}</p>
