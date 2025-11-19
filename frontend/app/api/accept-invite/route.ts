@@ -3,36 +3,12 @@ import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
   try {
-    const { token, name, password } = await req.json();
+    const { token } = await req.json();
 
     const invite = await prisma.invite.findUnique({ where: { token } });
+
     if (!invite || invite.expiresAt < new Date() || invite.accepted) {
       return NextResponse.json({ error: "Invalid or expired invite" }, { status: 400 });
-    }
-
-    // Check if user already exists
-    const existingUser = await prisma.user.findUnique({ where: { email: invite.email } });
-    if (existingUser) {
-      return NextResponse.json({ error: "User already exists with this email" }, { status: 400 });
-    }
-
-    // Create new user
-    const newUser = await prisma.user.create({
-      data: {
-        email: invite.email,
-        name,
-        role: invite.role,
-      },
-    });
-
-    // Create tenant record linking to apartment
-    if (invite.role === "TENANT" && invite.apartmentId) {
-      await prisma.tenant.create({
-        data: {
-          userId: newUser.id,
-          apartmentid: invite.apartmentId,
-        },
-      });
     }
 
     await prisma.invite.update({
@@ -40,9 +16,12 @@ export async function POST(req: Request) {
       data: { accepted: true, acceptedAt: new Date() },
     });
 
-    return NextResponse.json({ success: true, message: "Invite accepted" });
+    return NextResponse.json({
+      success: true,
+      message: "Invitation approved. Now login with Google using this email.",
+    });
   } catch (err) {
     console.error(err);
-    return NextResponse.json({ success: false, error: "Failed to accept invite" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to accept invite" }, { status: 500 });
   }
 }
