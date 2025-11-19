@@ -16,10 +16,6 @@ export default function Register() {
             setError("All fields are necessary.");
             return;
         }
-        console.log("Registering user");
-        console.log(name)
-        console.log(email)
-        console.log(password)
         const res = await fetch("/api/usersRegistration", {
             method: "POST",
             headers: {
@@ -36,7 +32,6 @@ export default function Register() {
             router.push("/auth/login");
         } else {
             const data = await res.json();
-            console.log("Data is ", data);
             setError(data.message || "Something went wrong");
         }
     };
