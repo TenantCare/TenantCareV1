@@ -1,62 +1,46 @@
-import NextAuth from "next-auth";
+import NextAuth, { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
-import CredentialsProvider from "next-auth/providers/credentials";
-import { PrismaClient } from "@prisma/client";
-import { compare } from "bcryptjs";
+import { PrismaAdapter } from "@next-auth/prisma-adapter";
+import { prisma } from "@/lib/prisma";
 
-const prisma = new PrismaClient();
+export const authOptions: NextAuthOptions = {
+	adapter: PrismaAdapter(prisma),
+  providers: [
+    GoogleProvider({
+      clientId: process.env.NEXTAUTH_GOOGLE_ID ?? "",
+      clientSecret: process.env.NEXTAUTH_GOOGLE_SECRET ?? "",
+    }),
+  ],
+  callbacks: {
+    async jwt({ token, user }) {
+      if (user) {
+        token.id = user.id;
+        token.role = (user as any).role ?? "OWNER";
+      }
+		
+      console.log("JWT Token:", token);
+      return token;
+    },
+    async session({ session, token }) {
+      if (session.user) {
+        (session.user as any).id = token.id as string;
+        (session.user as any).role = token.role as string;
+      }
+      console.log("Session:", session);
+      return session;
+    },
+    async redirect({ url, baseUrl }) {
+      if (url === "/") return `${baseUrl}/dashboard`;
+      if (url.startsWith("/")) return `${baseUrl}${url}`;
+      if (url.startsWith(baseUrl)) return url;
 
-const handler = NextAuth({
-	providers: [
-		GoogleProvider({
-			clientId: process.env.NEXTAUTH_GOOGLE_ID ?? "",
-			clientSecret: process.env.NEXTAUTH_GOOGLE_SECRET ?? "",
-		}),
-		CredentialsProvider({
-			name: "Credentials",
-			credentials: {
-				email: { label: "Email", type: "email" },
-				password: { label: "Password", type: "password" },
-			},
-			async authorize(credentials) {
-				const user = await prisma.user.findUnique({
-					where: { email: credentials?.email },
-				});
+      return baseUrl;
+    },
+  },
+  session:{strategy: "jwt"},
+//   pages: { signIn: "/" },
+};
 
-				if (
-					user &&
-					(await compare(credentials.password, user.password))
-				) {
-					return user;
-				} else {
-					throw new Error("Invalid email or password");
-				}
-			},
-		}),
-	],
-	callbacks: {
-		async session({ session, token }) {
-			const user = await prisma.user.findUnique({
-				where: { email: session.user?.email ?? "" },
-			});
-
-			if (user) {
-				session.user.id = user.id;
-				session.user.role = user.role;
-			}
-
-			return session;
-		},
-		async jwt({ token, user }) {
-			if (user) {
-				token.id = user.id;
-				token.role = user.role;
-			}
-			return token;
-		},
-	},
-
-	secret: process.env.NEXTAUTH_SECRET,
-});
+const handler = NextAuth(authOptions);
 
 export { handler as GET, handler as POST };

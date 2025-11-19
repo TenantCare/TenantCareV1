@@ -1,16 +1,64 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+generator client {
+  provider = "prisma-client-js"
+}
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-generator client {
-  provider = "prisma-client-js"
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  password  String
+  role      UserRole
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  tenants   Tenant[]
+}
+
+model Building {
+  id         Int         @id @default(autoincrement())
+  name       String
+  location   String
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  apartments Apartment[]
+}
+
+model Apartment {
+  id         Int      @id @default(autoincrement())
+  number     String
+  buildingId Int
+  tenantId   Int?     @unique
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  building   Building @relation(fields: [buildingId], references: [id])
+  tenant     Tenant?  @relation(fields: [tenantId], references: [id])
+}
+
+model Payment {
+  id            Int           @id @default(autoincrement())
+  tenantId      Int
+  amount        Float
+  date          DateTime
+  status        PaymentStatus
+  paymentMethod String
+  chequeNumber  String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  tenant        Tenant        @relation(fields: [tenantId], references: [id])
+}
+
+model Tenant {
+  id        Int        @id @default(autoincrement())
+  userId    Int
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  apartment Apartment?
+  payments  Payment[]
+  user      User       @relation(fields: [userId], references: [id])
 }
 
 enum UserRole {
@@ -22,58 +70,4 @@ enum PaymentStatus {
   PENDING
   COMPLETED
   FAILED
-}
-
-model User {
-  id        Int      @id @default(autoincrement())
-  name      String
-  email     String   @unique
-  password  String
-  role      UserRole
-  tenants   Tenant[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model Building {
-  id         Int         @id @default(autoincrement())
-  name       String
-  location   String
-  apartments Apartment[]
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
-}
-
-model Apartment {
-  id         Int      @id @default(autoincrement())
-  number     String
-  buildingId Int
-  tenantId   Int?     @unique
-  building   Building @relation(fields: [buildingId], references: [id])
-  tenant     Tenant?  @relation(fields: [tenantId], references: [id])
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-}
-
-model Payment {
-  id            Int           @id @default(autoincrement())
-  tenantId      Int
-  amount        Float
-  date          DateTime
-  status        PaymentStatus
-  paymentMethod String
-  chequeNumber  String?
-  tenant        Tenant        @relation(fields: [tenantId], references: [id])
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-}
-
-model Tenant {
-  id        Int        @id @default(autoincrement())
-  userId    Int
-  user      User       @relation(fields: [userId], references: [id])
-  payments  Payment[]
-  apartment Apartment?
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
 }
