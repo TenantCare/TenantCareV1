@@ -5,7 +5,7 @@ import { getToken } from "next-auth/jwt";
 export async function middleware(req: NextRequest) {
 	const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
 	const url = req.nextUrl.clone();
-
+	
 	if (url.pathname.startsWith("/admin")) {
 		if (!token || token.role !== "ADMIN") {
 			url.pathname = "/api/auth/signin";

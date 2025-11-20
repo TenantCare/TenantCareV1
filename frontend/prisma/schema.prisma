@@ -18,11 +18,13 @@ model User {
   updatedAt     DateTime  @updatedAt
 
   // Relations
-  tenants Tenant[]
-  owners  Owner[]
+  tenants            Tenant[]
+  owners             Owner[]
+  paymentAttachments PaymentAttachment[]
 
   sessions Session[]
   accounts Account[]
+  leases   Lease[]
 }
 
 model Account {
@@ -67,6 +69,7 @@ model Tenant {
   apartmentid String?
   payments    Payment[]
   createdAt   DateTime   @default(now())
+  Lease       Lease[]
 }
 
 model Owner {
@@ -96,14 +99,33 @@ model Apartment {
 
   Invite    Invite[]
   createdAt DateTime @default(now())
+  leases    Lease[]
 }
 
 model Payment {
-  id        String   @id @default(uuid())
-  tenantId  String
-  tenant    Tenant   @relation(fields: [tenantId], references: [id])
-  amount    Float
-  createdAt DateTime @default(now())
+  id          String              @id @default(uuid())
+  tenantId    String
+  tenant      Tenant              @relation(fields: [tenantId], references: [id])
+  amount      Float
+  createdAt   DateTime            @default(now())
+  Lease       Lease?              @relation(fields: [leaseId], references: [id])
+  leaseId     String?
+  attachments PaymentAttachment[]
+}
+
+model PaymentAttachment {
+  id         String   @id @default(uuid())
+  paymentId  String
+  payment    Payment  @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  uploaderId String?
+  uploader   User?    @relation(fields: [uploaderId], references: [id])
+  fileName   String
+  url        String
+  method     String? // e.g., CHEQUE | NETBANK | UPI | OTHER
+  reference  String? // cheque number or txn id
+  createdAt  DateTime @default(now())
+
+  @@index([paymentId])
 }
 
 enum Role {
@@ -127,4 +149,23 @@ model Invite {
 
   ownerId String?
   owner   Owner?  @relation(fields: [ownerId], references: [id])
+}
+
+model Lease {
+  id          String    @id @default(cuid())
+  // tenant      User      @relation(fields: [tenantId], references: [id])
+  tenantId    String
+  apartment   Apartment @relation(fields: [apartmentId], references: [id])
+  apartmentId String
+
+  startDate  DateTime
+  endDate    DateTime?
+  rentAmount Int
+  dueDate    Int
+  active     Boolean   @default(true)
+  createdAt  DateTime  @default(now())
+  tenant     Tenant    @relation(fields: [tenantId], references: [id])
+  payments   Payment[]
+  user       User?     @relation(fields: [userId], references: [id])
+  userId     String?
 }

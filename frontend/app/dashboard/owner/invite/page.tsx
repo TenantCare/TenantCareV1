@@ -29,7 +29,11 @@ export default function InvitePage() {
       try {
         const res = await fetch("/api/invite");
         const data = await res.json();
-        setInvites(data.invites || []);
+        console.log("Response and data:", res, data);
+        // API returns an array of invites directly. Support both shapes.
+        const invitesArray = Array.isArray(data) ? data : data.invites || [];
+        setInvites(invitesArray);
+        console.log("Fetched invites:", invitesArray);
       } catch (error) {
         console.error("Failed to fetch invites", error);
       }
@@ -42,7 +46,6 @@ export default function InvitePage() {
       alert("Please enter tenant email and select an apartment");
       return;
     }
-
     setLoading(true);
     try {
       const res = await fetch("/api/invite", {
@@ -50,16 +53,24 @@ export default function InvitePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, apartmentId, role: "TENANT" }),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => null);
+      console.log("Invite response data:", data, "status:", res.status);
 
-      if (data.success) {
-        setInviteLink(`${window.location.origin}/accept-invite?token=${data.invite.token}`);
-        // refresh invite list
-        const refreshed = await fetch("/api/invite").then((r) => r.json());
-        setInvites(refreshed.invites || []);
-      } else {
-        alert(data.error || "Failed to send invite");
+      if (!res.ok) {
+        // Prefer server-provided message, fallback to status text
+        const errMsg = data?.error || `Server responded with ${res.status}`;
+        alert(errMsg);
+        return;
       }
+
+      // On success: use returned inviteLink if provided and refresh invites
+      if (data?.inviteLink) {
+        setInviteLink(data.inviteLink);
+      }
+
+      const refreshed = await fetch("/api/invite").then((r) => r.json());
+      const refreshedArray = Array.isArray(refreshed) ? refreshed : refreshed.invites || [];
+      setInvites(refreshedArray);
     } catch (err) {
       console.error("Error sending invite:", err);
       alert("Something went wrong.");
@@ -124,16 +135,21 @@ export default function InvitePage() {
               </tr>
             </thead>
             <tbody>
-              {invites.map((inv: any) => (
-                <tr key={inv.id}>
-                  <td className="border p-2">{inv.email}</td>
-                  <td className="border p-2">{inv.apartmentId}</td>
-                  <td className="border p-2">{inv.apartment?.building?.name || "-"}</td>
-                  <td className="border p-2">
-                    {new Date(inv.createdAt).toLocaleDateString()}
-                  </td>
-                </tr>
-              ))}
+              {invites.map((inv: any) => {
+                const apt = apartments.find((a: any) => a.id === inv.apartmentId) || inv.apartment;
+                const apartmentLabel = apt?.label || inv.apartmentId || "-";
+                // building may be nested on the apartment object
+                const buildingName = apt?.building?.name || "-";
+
+                return (
+                  <tr key={inv.id}>
+                    <td className="border p-2">{inv.email}</td>
+                    <td className="border p-2">{apartmentLabel}</td>
+                    <td className="border p-2">{buildingName}</td>
+                    <td className="border p-2">{new Date(inv.createdAt).toLocaleDateString()}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         )}
