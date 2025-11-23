@@ -9,6 +9,7 @@ export const authOptions: NextAuthOptions = {
 		GoogleProvider({
 			clientId: process.env.NEXTAUTH_GOOGLE_ID ?? "",
 			clientSecret: process.env.NEXTAUTH_GOOGLE_SECRET ?? "",
+			//  allowDangerousEmailAccountLinking: true,
 		}),
 	],
 	callbacks: {
