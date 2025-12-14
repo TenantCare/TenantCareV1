@@ -15,6 +15,7 @@ export async function POST(req: NextRequest) {
 		const body = await req.json();
 		let tenantId = body?.tenantId;
 		let amount = Number(body?.amount ?? 0);
+		let confirmed = body?.confirmed ?? true; // Default to true for owner-initiated payments, false for tenant uploads
 
 		let tenant = null;
 		if (tenantId) {
@@ -63,6 +64,7 @@ export async function POST(req: NextRequest) {
 			data: {
 				tenantId: tenant.id,
 				amount,
+				confirmed,
 				...(leaseId ? { leaseId } : {}),
 			},
 		});

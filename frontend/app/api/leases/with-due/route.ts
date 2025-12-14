@@ -93,17 +93,28 @@ export async function GET(req: NextRequest) {
 				const dueDay = lease.dueDate ?? 1;
 				const { periodStart, periodEnd } = periodForDueDay(dueDay);
 
+				// Get the invoice that applies to this period
+				const invoiceForPeriod = await prisma.invoice.findFirst({
+					where: {
+						leaseId: lease.id,
+						dueDate: { gte: periodStart, lt: periodEnd },
+					},
+					orderBy: { createdAt: "desc" },
+				});
+
+				const invoiceAmount = invoiceForPeriod?.amount ?? lease.rentAmount;
+
 				const paymentsSum = await prisma.payment.aggregate({
 					where: {
 						leaseId: lease.id,
 						createdAt: { gte: periodStart, lt: periodEnd },
+						confirmed: true,
 					},
 					_sum: { amount: true },
 				});
 
-				const paidThisPeriod = paymentsSum._sum.amount ?? 0;
-				const rentAmount = Number(lease.rentAmount ?? 0);
-				const dueThisPeriod = Math.max(0, rentAmount - paidThisPeriod);
+				const paidThisPeriod = paymentsSum._sum?.amount ?? 0;
+				const dueThisPeriod = Math.max(0, invoiceAmount - paidThisPeriod);
 
 				return {
 					lease,

@@ -4,12 +4,14 @@ import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useToast } from "@/app/components/ToastProvider";
 
 
 export default function OwnerDashboardPage({ owner }: { owner: any }) {
   console.log("Owner data:", owner);
 
   const { data: session } = useSession();
+  const toast = useToast();
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<null | string>(null);
   const [invites, setInvites] = useState([]);
@@ -28,7 +30,7 @@ export default function OwnerDashboardPage({ owner }: { owner: any }) {
 
   const createApartment = async () => {
     if (!buildingName || !apartmentLabel) {
-      alert("Please provide both fields");
+      toast.error("Please provide both fields");
       return;
     }
 
@@ -42,13 +44,13 @@ export default function OwnerDashboardPage({ owner }: { owner: any }) {
       const data = await res.json();
 
       if (data.success) {
-        alert("Apartment added successfully!");
+        toast.success("Apartment added successfully!");
         setBuildingName(data.buildingName);
         setApartmentLabel(data.apartmentLabel);
         // Re-fetch apartment list
         // fetchApartments();
       } else {
-        alert(data.error || "Error adding apartment");
+        toast.error(data.error || "Error adding apartment");
       }
     } finally {
       setCreating(false);
@@ -375,7 +377,7 @@ export default function OwnerDashboardPage({ owner }: { owner: any }) {
                             <button
                               onClick={async () => {
                                 const rent = Number(rentInputs[t.id] ?? lease?.rentAmount ?? 0);
-                                if (!rent) return alert("Enter a valid rent amount");
+                                if (!rent) return toast.error("Enter a valid rent amount");
                                 try {
                                   const res = await fetch("/api/leases", {
                                     method: "POST",
@@ -390,10 +392,10 @@ export default function OwnerDashboardPage({ owner }: { owner: any }) {
                                     ? leasesJson.filter((l: any) => l.apartment?.id === selectedApartment.id || l.apartmentId === selectedApartment.id)
                                     : [];
                                   setApartmentLeases(leasesFor);
-                                  alert("Lease saved");
+                                  toast.success("Lease saved");
                                 } catch (err) {
                                   console.error(err);
-                                  alert("Failed to save lease");
+                                  toast.error("Failed to save lease");
                                 }
                               }}
                               className="bg-blue-600 text-white px-3 py-1 rounded"
@@ -402,22 +404,22 @@ export default function OwnerDashboardPage({ owner }: { owner: any }) {
                             </button>
                             <button
                               onClick={async () => {
-                                // Mark as Paid: create payment for this tenant
+                                // Mark as Paid: create confirmed payment for this tenant
                                 try {
                                   const payRes = await fetch("/api/payments", {
                                     method: "POST",
                                     headers: { "Content-Type": "application/json" },
-                                    body: JSON.stringify({ tenantId: t.id, amount: rentInputs[t.id] ?? lease?.rentAmount ?? 0 }),
+                                    body: JSON.stringify({ tenantId: t.id, amount: rentInputs[t.id] ?? lease?.rentAmount ?? 0, confirmed: true }),
                                   });
                                   const payJson = await payRes.json();
                                   if (payJson?.success) {
-                                    alert("Marked as paid!");
+                                    toast.success("Marked as paid!");
                                   } else {
-                                    alert("Failed to mark as paid");
+                                    toast.error("Failed to mark as paid");
                                   }
                                 } catch (err) {
                                   console.error(err);
-                                  alert("Failed to mark as paid");
+                                  toast.error("Failed to mark as paid");
                                 }
                               }}
                               className="bg-green-600 text-white px-3 py-1 rounded"
@@ -434,7 +436,7 @@ export default function OwnerDashboardPage({ owner }: { owner: any }) {
                                   setShowAttachmentsFor(t);
                                 } catch (err) {
                                   console.error(err);
-                                  alert('Failed to load uploads');
+                                  toast.error('Failed to load uploads');
                                 }
                               }}
                               className="bg-gray-100 text-gray-700 px-3 py-1 rounded"

@@ -75,14 +75,31 @@ export async function POST(req: Request) {
 	});
 
 	if (existing) {
-		await prisma.lease.update({
+		// Update existing lease - create a new Invoice for this period
+		const updatedLease = await prisma.lease.update({
 			where: { id: existing.id },
 			data: { rentAmount, dueDate: dueDay },
 		});
+
+		// Generate invoice for the updated rent amount effective this period
+		const now = new Date();
+		const dueDateObj = new Date(now.getFullYear(), now.getMonth(), dueDay);
+		if (dueDateObj < now) {
+			dueDateObj.setMonth(dueDateObj.getMonth() + 1);
+		}
+
+		await prisma.invoice.create({
+			data: {
+				leaseId: existing.id,
+				amount: rentAmount,
+				dueDate: dueDateObj,
+			},
+		});
+
 		return NextResponse.json({ success: true });
 	}
 
-	await prisma.lease.create({
+	const newLease = await prisma.lease.create({
 		data: {
 			tenantId,
 			apartmentId,
@@ -90,6 +107,21 @@ export async function POST(req: Request) {
 			dueDate: dueDay,
 			startDate: new Date(),
 			active: true,
+		},
+	});
+
+	// Create first invoice for the new lease
+	const now = new Date();
+	const dueDateObj = new Date(now.getFullYear(), now.getMonth(), dueDay);
+	if (dueDateObj < now) {
+		dueDateObj.setMonth(dueDateObj.getMonth() + 1);
+	}
+
+	await prisma.invoice.create({
+		data: {
+			leaseId: newLease.id,
+			amount: rentAmount,
+			dueDate: dueDateObj,
 		},
 	});
 

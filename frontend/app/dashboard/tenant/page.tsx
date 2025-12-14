@@ -4,6 +4,7 @@ import { useSession } from "next-auth/react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
+import { useToast } from "@/app/components/ToastProvider";
 
 const StatCard = ({
   title,
@@ -40,6 +41,7 @@ const StatCard = ({
 
 export default function TenantDashboardPage() {
   const { data: session } = useSession();
+  const toast = useToast();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -155,7 +157,7 @@ export default function TenantDashboardPage() {
               <input value={uploadReference} onChange={(e) => setUploadReference(e.target.value)} placeholder="Reference / Cheque no" className="border rounded p-1 flex-1" />
               <button
                 onClick={async () => {
-                  if (!selectedFile) return alert("Choose a file first");
+                  if (!selectedFile) return toast.error("Choose a file first");
                   setUploading(true);
                   try {
                     const toBase64 = (file: File) => new Promise<string>((res, rej) => {
@@ -166,8 +168,8 @@ export default function TenantDashboardPage() {
                     });
                     const fileBase64 = await toBase64(selectedFile);
 
-                    // create a payment first
-                    const payRes = await fetch("/api/payments", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ amount: data.lease.rentAmount }) });
+                    // Create an unconfirmed payment (confirmed: false) so it doesn't count towards due until owner approves
+                    const payRes = await fetch("/api/payments", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ amount: data.lease.rentAmount, confirmed: false }) });
                     const payJson = await payRes.json();
                     const paymentId = payJson?.payment?.id;
                     if (!paymentId) throw new Error("Failed to create payment");
@@ -179,15 +181,16 @@ export default function TenantDashboardPage() {
                     });
                     const attachJson = await attachRes.json();
                     if (attachJson?.success) {
-                      alert("Upload successful");
-                      location.reload();
+                      toast.success("Upload successful. Awaiting owner approval.");
+                      setSelectedFile(null);
+                      setUploadReference("");
                     } else {
                       console.error(attachJson);
-                      alert("Upload failed");
+                      toast.error("Upload failed");
                     }
                   } catch (err) {
                     console.error(err);
-                    alert("Upload failed");
+                    toast.error("Upload failed");
                   } finally {
                     setUploading(false);
                   }

@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import { useToast } from "@/app/components/ToastProvider";
 
 export default function InvitePage() {
   const [email, setEmail] = useState("");
@@ -41,9 +42,11 @@ export default function InvitePage() {
     fetchInvites();
   }, []);
 
+  const toast = useToast();
+
   const sendInvite = async () => {
     if (!email || !apartmentId) {
-      alert("Please enter tenant email and select an apartment");
+      toast.error("Please enter tenant email and select an apartment");
       return;
     }
     setLoading(true);
@@ -59,7 +62,7 @@ export default function InvitePage() {
       if (!res.ok) {
         // Prefer server-provided message, fallback to status text
         const errMsg = data?.error || `Server responded with ${res.status}`;
-        alert(errMsg);
+        toast.error(errMsg);
         return;
       }
 
@@ -73,7 +76,7 @@ export default function InvitePage() {
       setInvites(refreshedArray);
     } catch (err) {
       console.error("Error sending invite:", err);
-      alert("Something went wrong.");
+      toast.error("Something went wrong.");
     } finally {
       setLoading(false);
     }
