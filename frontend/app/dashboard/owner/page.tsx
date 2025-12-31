@@ -14,11 +14,11 @@ export default function OwnerDashboardPage({ owner }: { owner: any }) {
   const toast = useToast();
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<null | string>(null);
-  const [invites, setInvites] = useState([]);
+  const [invites, setInvites] = useState<any[]>([]);
   const [buildingName, setBuildingName] = useState("");
   const [apartmentLabel, setApartmentLabel] = useState("");
   const [creating, setCreating] = useState(false);
-  const [apartments, setApartments] = useState([]);
+  const [apartments, setApartments] = useState<any[]>([]);
   const [selectedApartment, setSelectedApartment] = useState<any | null>(null);
   const [apartmentTenants, setApartmentTenants] = useState<any[]>([]);
   const [apartmentLeases, setApartmentLeases] = useState<any[]>([]);
@@ -26,6 +26,8 @@ export default function OwnerDashboardPage({ owner }: { owner: any }) {
   const [showModal, setShowModal] = useState(false);
   const [attachmentsByTenant, setAttachmentsByTenant] = useState<Record<string, any[]>>({});
   const [showAttachmentsFor, setShowAttachmentsFor] = useState<any | null>(null);
+  const [showHistoryModal, setShowHistoryModal] = useState<boolean>(false);
+  const [historyData, setHistoryData] = useState<any[]>([]);
 
 
   const createApartment = async () => {
@@ -69,6 +71,25 @@ export default function OwnerDashboardPage({ owner }: { owner: any }) {
   }, [showModal]);
 
   useEffect(() => {
+    // Prefer the server-provided `owner` prop (owner -> buildings -> apartments).
+    // This prevents listing apartments that don't belong to the logged-in owner
+    // which caused the 403 when trying to fetch history for another owner's apartment.
+    try {
+      if (owner?.buildings && Array.isArray(owner.buildings)) {
+        const ownerApts: any[] = [];
+        owner.buildings.forEach((b: any) => {
+          (b.apartments || []).forEach((a: any) => {
+            ownerApts.push({ ...a, building: { name: b.name, id: b.id } });
+          });
+        });
+        setApartments(ownerApts);
+        return;
+      }
+    } catch (err) {
+      console.error("Error processing owner prop for apartments", err);
+    }
+
+    // fallback: fetch all (keeps previous behavior if owner prop isn't available)
     const fetchApartments = async () => {
       try {
         const res = await fetch("/api/apartments");
@@ -79,7 +100,7 @@ export default function OwnerDashboardPage({ owner }: { owner: any }) {
       }
     };
     fetchApartments();
-  }, []);
+  }, [owner]);
   useEffect(() => {
     const fetchInvites = async () => {
       const res = await fetch("/api/invite");
@@ -277,6 +298,64 @@ export default function OwnerDashboardPage({ owner }: { owner: any }) {
       </AnimatePresence>
 
       <AnimatePresence>
+        {showHistoryModal && (
+          <motion.div
+            key="history-backdrop"
+            className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div className="bg-white rounded-lg shadow-lg p-6 max-w-3xl w-full mx-4">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="text-lg font-semibold">Transaction History</h3>
+                  <p className="text-sm text-gray-500">Apartment · {selectedApartment?.label}</p>
+                </div>
+                <button onClick={() => setShowHistoryModal(false)} className="text-gray-500">✕</button>
+              </div>
+
+              <div className="space-y-4 max-h-[60vh] overflow-auto">
+                {historyData.length === 0 ? (
+                  <p className="text-sm text-gray-500">No transactions found.</p>
+                ) : (
+                  historyData.map((p: any) => (
+                    <div key={p.id} className="border rounded p-3">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="font-medium">{p.tenant?.user?.name ?? 'Tenant'}</div>
+                          <div className="text-sm text-gray-500">{p.tenant?.user?.email}</div>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-medium">₹{p.amount}</div>
+                          <div className="text-xs text-gray-500">{new Date(p.createdAt).toLocaleString()}</div>
+                        </div>
+                      </div>
+                      {(p.attachments || []).length > 0 && (
+                        <div className="mt-2 flex gap-3 flex-wrap">
+                          {p.attachments.map((a: any) => (
+                            <div key={a.id} className="w-40">
+                              {a.url.match(/\.(jpg|jpeg|png|gif)$/i) ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img src={a.url} alt={a.fileName} className="w-full h-24 object-cover rounded" />
+                              ) : (
+                                <a href={a.url} target="_blank" rel="noreferrer" className="text-sm text-blue-600">{a.fileName}</a>
+                              )}
+                              <div className="text-xs text-gray-500">{a.method} {a.reference ? `· ${a.reference}` : ""}</div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
         {showAttachmentsFor && (
           <motion.div
             key="attachments-backdrop"
@@ -349,7 +428,29 @@ export default function OwnerDashboardPage({ owner }: { owner: any }) {
                   <h3 className="text-lg font-semibold">{selectedApartment.label}</h3>
                   <p className="text-sm text-gray-500">{selectedApartment.building?.name}</p>
                 </div>
-                <button onClick={() => setSelectedApartment(null)} className="text-gray-500">✕</button>
+                <div className="flex items-center gap-2">
+                  <button
+                    title="Transaction history"
+                    onClick={async () => {
+                      try {
+                        const res = await fetch(`/api/payments/history?apartmentId=${selectedApartment.id}`);
+                        if (!res.ok) throw new Error("Failed to fetch history");
+                        const json = await res.json();
+                        setHistoryData(Array.isArray(json) ? json : []);
+                        setShowHistoryModal(true);
+                      } catch (err) {
+                        console.error(err);
+                        setHistoryData([]);
+                        toast.error('Failed to load transaction history');
+                      }
+                    }}
+                    className="p-1 rounded hover:bg-gray-100"
+                  >
+                    {/* expects file at /public/transaction-history.png */}
+                    <img src="/icons/transaction-history.png" alt="history" className="w-6 h-6" />
+                  </button>
+                  <button onClick={() => setSelectedApartment(null)} className="text-gray-500">✕</button>
+                </div>
               </div>
 
               <div>
