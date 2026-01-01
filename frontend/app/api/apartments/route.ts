@@ -26,8 +26,8 @@ export async function GET() {
 	}
 
 	// Flatten apartments list
-	const apartments = owner.buildings.flatMap((b) =>
-		b.apartments.map((a) => ({
+	const apartments = owner.buildings.flatMap((b: any) =>
+		b.apartments.map((a: any) => ({
 			id: a.id,
 			label: a.label,
 			building: { id: b.id, name: b.name },
