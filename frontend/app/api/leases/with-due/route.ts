@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/app/api/auth/[...nextauth]/options";
 import { prisma } from "@/lib/prisma";
 
 function periodForDueDay(dueDay: number, now = new Date()) {
@@ -102,7 +102,8 @@ export async function GET(req: NextRequest) {
 					orderBy: { createdAt: "desc" },
 				});
 
-				const invoiceAmount = invoiceForPeriod?.amount ?? lease.rentAmount;
+				const invoiceAmount =
+					invoiceForPeriod?.amount ?? lease.rentAmount;
 
 				const paymentsSum = await prisma.payment.aggregate({
 					where: {
@@ -114,7 +115,10 @@ export async function GET(req: NextRequest) {
 				});
 
 				const paidThisPeriod = paymentsSum._sum?.amount ?? 0;
-				const dueThisPeriod = Math.max(0, invoiceAmount - paidThisPeriod);
+				const dueThisPeriod = Math.max(
+					0,
+					invoiceAmount - paidThisPeriod
+				);
 
 				return {
 					lease,

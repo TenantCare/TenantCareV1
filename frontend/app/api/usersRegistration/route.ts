@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
-import { hash } from "bcryptjs";
 
 const prisma = new PrismaClient();
 
@@ -19,13 +18,12 @@ export async function POST(req: NextRequest) {
 		);
 	}
 
-	const hashedPassword = await hash(password, 10);
-
+	// Frontend Prisma schema (used by this API) does not include a `password` field
+	// (authentication is handled via NextAuth). Store only the allowed fields.
 	const newUser = await prisma.user.create({
 		data: {
 			email,
 			name,
-			password: hashedPassword,
 			role: "TENANT",
 		},
 	});

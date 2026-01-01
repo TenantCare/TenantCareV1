@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/app/api/auth/[...nextauth]/options";
 import { NextResponse, NextRequest } from "next/server";
 
 export async function GET(req: NextRequest) {
@@ -46,8 +46,11 @@ export async function GET(req: NextRequest) {
 	// - ?testMode=1&windowDays=7  => sum payments in last 7 days
 	// - ?allPayments=1           => sum all payments for the tenant (no date filter)
 	const params = req.nextUrl.searchParams;
-	const testMode = params.get("testMode") === "1" || params.get("testMode") === "true";
-	const allPayments = params.get("allPayments") === "1" || params.get("allPayments") === "true";
+	const testMode =
+		params.get("testMode") === "1" || params.get("testMode") === "true";
+	const allPayments =
+		params.get("allPayments") === "1" ||
+		params.get("allPayments") === "true";
 
 	let paymentsAgg;
 	if (!tenant) {
@@ -73,7 +76,11 @@ export async function GET(req: NextRequest) {
 		// default: current calendar month
 		const now = new Date();
 		const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-		const firstOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+		const firstOfNextMonth = new Date(
+			now.getFullYear(),
+			now.getMonth() + 1,
+			1
+		);
 		paymentsAgg = await prisma.payment.aggregate({
 			_sum: { amount: true },
 			where: {

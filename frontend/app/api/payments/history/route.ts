@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/app/api/auth/[...nextauth]/options";
 import { prisma } from "@/lib/prisma";
 
 export async function GET(req: NextRequest) {
@@ -48,17 +48,30 @@ export async function GET(req: NextRequest) {
 
 		// Try ownership check: consider owner -> buildings -> apartments so owners can own specific apartments
 		try {
-			console.log("payments/history: session.user=", session.user?.email, "user.id=", user.id);
+			console.log(
+				"payments/history: session.user=",
+				session.user?.email,
+				"user.id=",
+				user.id
+			);
 			// attempt to load owner's buildings & apartments
 			const ownerRecord = await prisma.owner.findFirst({
 				where: { userId: user.id },
 				include: { buildings: { include: { apartments: true } } },
 			});
-			console.log("payments/history: ownerRecord=", ownerRecord?.id, ownerRecord?.userId);
+			console.log(
+				"payments/history: ownerRecord=",
+				ownerRecord?.id,
+				ownerRecord?.userId
+			);
 			if (ownerRecord) {
 				// check if any of the owner's buildings contains this apartment
 				for (const b of ownerRecord.buildings || []) {
-					if ((b.apartments || []).some((a: any) => a.id === apartment.id)) {
+					if (
+						(b.apartments || []).some(
+							(a: any) => a.id === apartment.id
+						)
+					) {
 						isOwner = true;
 						break;
 					}
@@ -71,7 +84,10 @@ export async function GET(req: NextRequest) {
 		}
 
 		if (!isOwner)
-			return NextResponse.json({ error: "Forbidden", reason: "not-owner" }, { status: 403 });
+			return NextResponse.json(
+				{ error: "Forbidden", reason: "not-owner" },
+				{ status: 403 }
+			);
 
 		// fetch payments for tenants in this apartment (only confirmed payments)
 		const payments = await prisma.payment.findMany({
