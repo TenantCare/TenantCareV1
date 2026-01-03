@@ -1,10 +1,10 @@
 import { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
-import { PrismaAdapter } from "@next-auth/prisma-adapter";
-import { prisma } from "@/lib/prisma";
 
 export const authOptions: NextAuthOptions = {
-	adapter: PrismaAdapter(prisma),
+	// adapter is applied lazily in the actual route to avoid initializing
+	// PrismaClient during build-time. Providers and callbacks can lazily
+	// import prisma where needed.
 	providers: [
 		GoogleProvider({
 			clientId: process.env.NEXTAUTH_GOOGLE_ID ?? "",
@@ -14,6 +14,7 @@ export const authOptions: NextAuthOptions = {
 	callbacks: {
 		async signIn({ user }) {
 			if (!user?.email) return true;
+			const { prisma } = await import("@/lib/prisma");
 
 			const invite = await prisma.invite.findFirst({
 				where: { email: user.email, accepted: true },
@@ -55,6 +56,7 @@ export const authOptions: NextAuthOptions = {
 		async session({ session }) {
 			if (!session.user?.email) return session;
 
+			const { prisma } = await import("@/lib/prisma");
 			const dbUser = await prisma.user.findUnique({
 				where: { email: session.user.email },
 			});

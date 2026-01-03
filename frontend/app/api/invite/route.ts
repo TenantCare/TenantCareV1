@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma";
+// prisma will be lazy-imported inside handlers to avoid build-time init
 import { randomBytes } from "crypto";
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
@@ -17,6 +17,7 @@ export async function POST(req: Request) {
 		}
 		const { email: tenantEmail, role, apartmentId } = await req.json();
 
+		const { prisma } = await import("@/lib/prisma");
 		const owner = await prisma.owner.findFirst({
 			where: { userId: session.user.id },
 		});
@@ -71,6 +72,8 @@ export async function GET() {
 	if (!session?.user?.email) {
 		return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 	}
+
+	const { prisma } = await import("@/lib/prisma");
 
 	const owner = await prisma.owner.findFirst({
 		where: { userId: session.user.id },

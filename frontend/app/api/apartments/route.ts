@@ -1,4 +1,3 @@
-import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/options";
 import { NextResponse } from "next/server";
@@ -9,6 +8,8 @@ export async function GET() {
 	if (!session?.user || session.user.role !== "OWNER") {
 		return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
 	}
+
+	const { prisma } = await import("@/lib/prisma");
 
 	const owner = await prisma.owner.findFirst({
 		where: { userId: session.user.id },
@@ -51,6 +52,8 @@ export async function POST(req: Request) {
 			{ status: 400 }
 		);
 	}
+
+	const { prisma } = await import("@/lib/prisma");
 
 	// Find or create owner record
 	let owner = await prisma.owner.findFirst({

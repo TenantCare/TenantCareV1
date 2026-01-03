@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma";
+// prisma will be lazy-imported inside the handler to avoid build-time init
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/options";
 import { NextResponse, NextRequest } from "next/server";
@@ -9,6 +9,7 @@ export async function GET(req: NextRequest) {
 	if (!session?.user?.email)
 		return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+	const { prisma } = await import("@/lib/prisma");
 	const user = await prisma.user.findUnique({
 		where: { email: session.user.email },
 		include: {

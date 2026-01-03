@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/options";
-import { prisma } from "@/lib/prisma";
 import fs from "fs";
 import path from "path";
 
@@ -24,6 +23,7 @@ export async function POST(
 				{ status: 400 }
 			);
 
+		const { prisma } = await import("@/lib/prisma");
 		const user = await prisma.user.findUnique({
 			where: { email: session.user.email },
 		});
@@ -137,6 +137,7 @@ export async function GET(
 				{ status: 401 }
 			);
 
+		const { prisma } = await import("@/lib/prisma");
 		const user = await prisma.user.findUnique({
 			where: { email: session.user.email },
 		});

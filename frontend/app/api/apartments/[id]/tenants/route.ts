@@ -1,4 +1,3 @@
-import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
 export async function GET(
@@ -8,6 +7,7 @@ export async function GET(
 	const apartmentId = params.id;
 
 	try {
+		const { prisma } = await import("@/lib/prisma");
 		const tenants = await prisma.tenant.findMany({
 			where: { apartmentid: apartmentId },
 			include: { user: true },

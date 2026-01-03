@@ -1,4 +1,3 @@
-import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/options";
 import { NextResponse } from "next/server";
@@ -10,6 +9,7 @@ export async function POST(req: Request) {
 	}
 
 	const { tenantId, apartmentId, rentAmount, dueDate } = await req.json();
+	const { prisma } = await import("@/lib/prisma");
 
 	const lease = await prisma.lease.create({
 		data: {

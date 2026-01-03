@@ -1,4 +1,3 @@
-import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/options";
 import OwnerDashboardClient from "./OwnerDashboardClient";
@@ -10,6 +9,7 @@ export default async function OwnerDashboard() {
     return <p>You are not logged in.</p>;
   }
 
+  const { prisma } = await import("@/lib/prisma");
   const owner = await prisma.owner.findFirst({
     where: { userId: session.user.id },
     include: {

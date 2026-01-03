@@ -1,4 +1,3 @@
-import { prisma } from "@/lib/prisma";
 import { NextResponse, NextRequest } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../auth/[...nextauth]/options";
@@ -10,6 +9,8 @@ export async function GET(req: NextRequest) {
 		return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
 	if (session.user.role === "OWNER") {
+		// lazy-load prisma at runtime to avoid build-time initialization
+		const { prisma } = await import("@/lib/prisma");
 		// find owner record
 		const owner = await prisma.owner.findFirst({
 			where: { userId: session.user.id },
@@ -33,6 +34,7 @@ export async function GET(req: NextRequest) {
 
 	// tenant: return leases for this tenant
 	if (session.user.role === "TENANT") {
+		const { prisma } = await import("@/lib/prisma");
 		const user = await prisma.user.findUnique({
 			where: { email: session.user.email },
 			include: { tenants: true },
@@ -70,6 +72,7 @@ export async function POST(req: Request) {
 	}
 
 	// if lease exists update
+	const { prisma } = await import("@/lib/prisma");
 	const existing = await prisma.lease.findFirst({
 		where: { tenantId, apartmentId, active: true },
 	});

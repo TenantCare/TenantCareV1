@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
 
 export async function POST(req: NextRequest) {
 	console.log("Inside register.ts handler");
 	const { email, password, name } = await req.json();
+
+	const { prisma } = await import("@/lib/prisma");
 
 	const existingUser = await prisma.user.findUnique({
 		where: { email },

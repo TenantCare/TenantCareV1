@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/options";
-import { prisma } from "@/lib/prisma";
 
 function periodForDueDay(dueDay: number, now = new Date()) {
 	// dueDay: 1-28/31, fallback to 1
@@ -38,6 +37,7 @@ export async function GET(req: NextRequest) {
 				{ status: 401 }
 			);
 
+		const { prisma } = await import("@/lib/prisma");
 		const user = await prisma.user.findUnique({
 			where: { email: session.user.email },
 		});
